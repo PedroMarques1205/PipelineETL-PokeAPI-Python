@@ -4,10 +4,11 @@ import logging
 from typing import List, Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from src.common.constants_utils import BASE_URL
+from src.drivers.interfaces.api_requester import ApiRequesterInterface
 
 logger = logging.getLogger(__name__)
 
-class ApiRequester:
+class ApiRequester(ApiRequesterInterface):
 
     @staticmethod
     def request_list_init_pokemons() -> List[Dict[str, str]]:
@@ -32,6 +33,8 @@ class ApiRequester:
         logger.info("Iniciando requisição dos detalhes dos pokemons")
         pokemons_list = self.request_list_init_pokemons()
         urls = [pokemon['url'] for pokemon in pokemons_list]
+        results = []
+        failed_count = 0
 
         def fetch(url):
             logger.info(f"Iniciando requisição para {url}")
@@ -44,8 +47,6 @@ class ApiRequester:
                 logger.error(f"Erro na requisição {url}: {e}", exc_info=True)
                 return None
 
-        results = []
-        failed_count = 0
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = {executor.submit(fetch, url): url for url in urls}
             for future in as_completed(futures):
